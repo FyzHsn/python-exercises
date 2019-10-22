@@ -1,4 +1,15 @@
 import hashlib
+import logging
+import os
+
+CURRENT_FILE_PATH = os.path.dirname(__file__)
+LOG_FILE_PATH = os.path.join(CURRENT_FILE_PATH, 'error.log')
+
+logging.basicConfig(
+    filename=LOG_FILE_PATH,
+    filemode='w',
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class User:
@@ -156,6 +167,7 @@ class Authorizer:
         except KeyError:
             self.permissions[perm_name] = set()
         else:
+            logging.ERROR("You cannot create a new permission when one exists already")
             raise PermissionError("Permission exists")
 
     def permit_user(self, perm_name, username):
@@ -171,7 +183,7 @@ class Authorizer:
         """
 
         try:
-            perm_set = self.permission[perm_name]
+            perm_set = self.permissions[perm_name]
         except KeyError:
             raise PermissionError("Permission does not exist")
         else:
@@ -192,10 +204,12 @@ class Authorizer:
         """
 
         if not self.authenticator.users[username].is_logged_in:
+            logging.error("You aren't logged in!")
             raise NotLoggedInError(username)
         try:
             perm_set = self.permissions[perm_name]
-        except KeyError:
+        except KeyError as e:
+            logging.error("The permission {} really does not exist".format(e.args[0]))
             raise PermissionError("Permission doesnt exist")
         else:
             if username not in perm_set:
@@ -205,10 +219,17 @@ class Authorizer:
 
 
 if __name__ == "__main__":
+    print(LOG_FILE_PATH)
+
     authenticator = Authenticator()
     authorizer = Authorizer(authenticator)
 
     authenticator.add_user("yung feezy", "real deal")
+    password = authenticator.users["yung feezy"].password
+    authenticator.login("yung feezy", password)
+    print(authenticator.users["yung feezy"].is_logged_in)
     authorizer.add_permissions("king of the forest that's why")
-    authorizer.check_permission("king of the forest that's why", "yung feezy")
-    authenticator.is_logged_in("yung feezy")
+    authorizer.permit_user("king of the forest that's why", "yung feezy")
+    authorizer.check_permission("king of the forest", "yung feezy")
+
+
