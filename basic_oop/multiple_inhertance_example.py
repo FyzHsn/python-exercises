@@ -10,15 +10,25 @@ class ContactList(list):
 class Contact:
     all_contacts = []
 
-    def __init__(self, name, email):
+    def __init__(self, name='', email='', **kwargs):
+        super().__init__(**kwargs)
         self.name = name
         self.email = email
         self.all_contacts.append(self)
 
 
-class Friend(Contact):
-    def __init__(self, name, email, phone):
-        super().__init__(name, email)
+class AddressHolder:
+    def __init__(self, street='', city='', state='', code='', **kwargs):
+        super().__init__(**kwargs)
+        self.street = street
+        self.city = city
+        self.state = state
+        self.code = code
+
+
+class Friend(Contact, AddressHolder):
+    def __init__(self, phone, **kwargs):
+        super().__init__(**kwargs)
         self.phone = phone
 
 
@@ -32,7 +42,18 @@ class EmailableContact(Contact, MailSender):
     pass
 
 
+
+
+
+
 if __name__ == "__main__":
     e = EmailableContact("Yung Feezy", "yung@feezy.com")
     print(Contact.all_contacts)
-    e.send_mail("Carry one")
+    e.send_mail("Carry on")
+
+    f = Friend(phone='1234', name='Faiyaz', email='faiyaz.hasan@mango',
+               street='1234 handsome street', city='modellville',
+               state='Quebec', code='All over')
+
+    print(f.phone)
+    print(f.city)
