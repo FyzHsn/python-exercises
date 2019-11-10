@@ -1,6 +1,6 @@
 FROM python3.7
 
-MAINTAINER Faiyaz Hasan "faiyaz.hasan1@gamail.com"
+MAINTAINER Faiyaz Hasan "faiyaz.hasan1@gmail.com"
 
 # Install requirements
 RUN pip install --no-cache -r requirements.txt
