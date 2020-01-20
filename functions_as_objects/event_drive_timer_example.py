@@ -1,8 +1,3 @@
-"""
-Note: I find this super complicated. Return to this exercise in a couple of weeks.
-"""
-
-
 import datetime
 import time
 
@@ -58,7 +53,7 @@ class Repeater:
     def repeater(self, timer):
         format_time("{now}: repeat {0}", self.count)
         timer.call_after(5, self.repeater)
-        self.count +=1
+        self.count += 1
 
 
 if __name__ == "__main__":
