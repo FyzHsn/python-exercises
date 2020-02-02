@@ -1,9 +1,6 @@
 import re
 
-import nltk
-from nltk.stem import PorterStemmer
-
-from utils import STOPWORDS
+from utils import preprocess
 
 
 class Text2Graph:
@@ -12,44 +9,17 @@ class Text2Graph:
         self.edges = {}
         self.graph = {}
 
-    def preprocess(self, remove_stopwords=True):
-        """Text preprocessor
-
-        Clean text by removing punctuations, stopwords, non-noun and
-        adjectives in addition to stemming.
-
-        :return: clean text
-        :rtype: str
-        """
-
-        self.text = self.text.lower()
-        self.text = re.sub("[,()\n\[\]<>;:\'\{\}]", "", self.text)
-        sentence_list = re.split("[?.]", self.text)
-
-        stemmer = PorterStemmer()
-        cleaned_sentence_list = []
-        for sentence in sentence_list:
-            clean_text = ""
-            text_pos = nltk.pos_tag(sentence.split())
-            for (word, tag) in text_pos:
-                if ("NN" in tag) or ("ADJ" in tag) or ("JJ" in tag):
-                    clean_text += word + " "
-
-            if remove_stopwords:
-                sentence = " ".join([stemmer.stem(word) for word in
-                                     clean_text.split() if word not in
-                                     STOPWORDS])
-
-            cleaned_sentence_list.append(sentence)
-
-        self.text = ". ".join(cleaned_sentence_list)
+    def preprocess(self, stop_filter=True, pos_filter=True):
+        self.text = ". ".join(preprocess(self.text,
+                                         stop_filter=stop_filter,
+                                         pos_filter=pos_filter))
 
     @staticmethod
     def update_graph(graph, text, window):
         text += " PADPAD" * (window - 2)
         text = text.split()
 
-        def update_edge_weights(graph, text, i, j):
+        def update_collocation_weights(graph, text, i, j):
             text_ij = (text[i], text[j])
 
             if text_ij in graph.keys() and "PADPAD" not in text_ij:
@@ -61,16 +31,14 @@ class Text2Graph:
 
         for i in range(0, len(text) - window + 1):
             for j in range(i + 1, i + window):
-                graph = update_edge_weights(graph, text, i, j)
-                graph = update_edge_weights(graph, text, j, i)
+                graph = update_collocation_weights(graph, text, i, j)
+                graph = update_collocation_weights(graph, text, j, i)
 
         return graph
 
-    def generate_graph(self, window=2):
+    def transform(self, window=2):
         for sentence in re.split("[?.]", self.text):
             self.graph = self.update_graph(self.graph, sentence, window)
-
-        print(self.graph)
 
     def degree_centrality(self):
         node_score = {}
@@ -81,26 +49,14 @@ class Text2Graph:
             else:
                 node_score[node_1] += weight_12
 
-        node_score = sorted([(node, score) for (node, score) in
-                             node_score.items()], key=lambda x: x[1],
-                            reverse=True)
-
-        return node_score
+        return sorted([(n, s) for (n, s) in node_score.items()],
+                      key=lambda x: x[1],
+                      reverse=True)
 
     def normalized_degree_centrality(self):
         node_score = self.degree_centrality()
-        n = len(node_score) - 1
-        return [(node, score / n) for (node, score) in node_score]
-
-
-class Corpora2Graph:
-    def __init__(self):
-        pass
-
-    def preprocess(self):
-        pass
-
-
+        node_num = len(node_score) - 1
+        return [(n, s / node_num) for (n, s) in node_score]
 
 
 if __name__ == "__main__":
@@ -133,8 +89,8 @@ aspects of motion such as velocity, acceleration, displacement, time,
 and trajectory."""
 
     doc = Text2Graph(document)
-    doc.preprocess(remove_stopwords=False)
-    doc.generate_graph(window=2)
+    doc.preprocess(stop_filter=False, pos_filter=False)
+    doc.transform(window=2)
     a = doc.degree_centrality()
     b = doc.normalized_degree_centrality()
 
